@@ -1,88 +1,83 @@
-# Deploy no Render
+# Deploy no Render Free
 
-Este projeto ja esta preparado para deploy direto no Render.
+Este projeto foi ajustado para subir no Render sem Blueprint.
 
-Arquivos de deploy incluidos:
-- `render.yaml`
-- `.python-version`
+Use o fluxo manual de `Web Service`.
+
+Arquivos importantes para o deploy:
+- `app.py`
+- `autuacao_extractor.py`
+- `web/index.html`
 - `requirements.txt`
+- `.python-version`
 
-## Opcao 1: Deploy automatico pelo `render.yaml`
+## O que preencher no Render
 
-Esse e o caminho mais simples.
+Crie um servico em:
+- `New` > `Web Service`
 
-1. Suba este projeto para o GitHub.
-2. No Render, clique em `New` > `Blueprint`.
-3. Conecte o repositorio.
-4. O Render vai ler o arquivo `render.yaml`.
-5. Revise o servico e clique para criar.
-
-O que ja esta configurado no `render.yaml`:
-- `type`: `web`
-- `runtime`: `python`
-- `region`: `oregon`
-- `buildCommand`: `pip install -r requirements.txt`
-- `startCommand`: `python app.py --host 0.0.0.0 --port $PORT`
-- `healthCheckPath`: `/healthz`
-- `autoDeployTrigger`: `commit`
-
-Observacao importante:
-- O arquivo `render.yaml` nao fixa o plano.
-- Se sua conta tiver opcao de plano gratis e voce quiser usar esse plano, confira isso antes de finalizar no painel.
-- Se o Render criar como `starter`, isso depende das opcoes disponiveis na sua conta.
-
-## Opcao 2: Preenchimento manual no painel do Render
-
-Se preferir criar sem Blueprint, preencha exatamente assim:
-
-- `New`: `Web Service`
+Preencha assim:
 - `Repository`: selecione este repositorio
 - `Branch`: `main`
-- `Runtime` / `Language`: `Python 3`
-- `Region`: `Oregon`
+- `Root Directory`: deixe vazio
+- `Name`: `filtro-autuacoes-pdf`
+- `Runtime`: `Python 3`
+- `Region`: escolha a regiao que preferir
+- `Branch Auto-Deploy`: `Yes`
 - `Build Command`: `pip install -r requirements.txt`
-- `Start Command`: `python app.py --host 0.0.0.0 --port $PORT`
+- `Start Command`: `python app.py`
 - `Health Check Path`: `/healthz`
-- `Auto-Deploy`: `Yes`
 
-### Environment Variables
+Se o painel mostrar escolha de plano/instance:
+- selecione a opcao gratuita disponivel na sua conta
 
-Nenhuma variavel obrigatoria precisa ser criada manualmente.
+## Variaveis de ambiente
 
-O Render ja fornece:
-- `PORT`
+Nao precisa criar nenhuma variavel manualmente.
 
-E este projeto ja inclui:
-- `.python-version` com `3.12`
+O app ja funciona assim:
+- o Render fornece `PORT`
+- o `app.py` detecta esse `PORT`
+- o `app.py` muda automaticamente para `0.0.0.0` quando estiver em ambiente hospedado
 
-Se o painel do Render pedir versao de Python manualmente, mantenha a linha `3.12` do arquivo `.python-version` como referencia.
+Se o Render pedir versao do Python manualmente:
+- use `3.12`
 
-## O que o app faz no Render
+## O que NAO preencher
+
+Nao precisa adicionar:
+- banco de dados
+- disco persistente
+- Redis
+- variaveis customizadas
+- Blueprint
+
+## Como o app funciona no Render
 
 - abre a interface web
 - recebe o PDF enviado pelo usuario
-- recebe os codigos digitados por virgula
-- filtra as linhas da tabela
-- gera e devolve o Excel em download
+- recebe os codigos separados por virgula
+- processa o PDF em memoria
+- devolve o arquivo `.xlsx` para download
 
 ## Endpoints uteis
 
 - pagina principal: `/`
 - health check: `/healthz`
 
-## Validacao antes de subir
+## Checklist antes de subir para o GitHub
 
-Confira se estes arquivos estao no GitHub:
+Confirme que estes arquivos estao no repositorio:
 - `app.py`
 - `autuacao_extractor.py`
 - `web/index.html`
-- `render.yaml`
 - `requirements.txt`
 - `.python-version`
+- `RENDER_DEPLOY.md`
 
-## Observacoes
+## Observacoes importantes
 
-- O app nao usa banco de dados.
-- O app nao exige armazenamento persistente.
-- O processamento do PDF acontece em memoria.
-- O arquivo enviado nao precisa ser salvo em disco para gerar o resultado.
+- O app nao usa banco.
+- O app nao precisa salvar arquivos no servidor para funcionar.
+- O processamento acontece em memoria.
+- O deploy foi preparado para o fluxo manual do Render Free.

@@ -20,7 +20,8 @@ MAX_UPLOAD_SIZE = 25 * 1024 * 1024
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
+    default_host = os.environ.get("HOST", "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
+    parser.add_argument("--host", default=default_host)
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
     return parser.parse_args()
 
