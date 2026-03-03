@@ -1,0 +1,356 @@
+# Project Spec: Filtro de Autuacoes PDF para Excel
+
+Use este prompt no Z.AI Workspace. Se eu também fornecer o arquivo mestre de limites do Z.AI, trate aquele arquivo como contexto-base obrigatório e este arquivo como especificacao do produto.
+
+0) One-liner
+
+Crie um app single-page chamado `Filtro de Autuacoes PDF para Excel`.
+Objetivo principal: permitir que o usuario digite codigos de autuacao separados por virgula, envie um PDF com tabela de autuacoes e baixe um arquivo `.xlsx` contendo apenas `placa`, `autuacao` e `data` das linhas compatíveis.
+Usuario-alvo: operador administrativo que precisa filtrar editais/notificacoes de transito rapidamente.
+Diferencial: o sistema deve descobrir dinamicamente a ordem das colunas em cada PDF, sem depender de posicoes fixas.
+
+1) Non-negotiables
+
+Stack obrigatoria:
+- Next.js 15 com App Router
+- TypeScript
+- Tailwind CSS 4
+- shadcn/ui
+- Lucide React
+
+Arquitetura:
+- App de uma pagina dentro do App Router
+- Sem backend complexo
+- Sem banco de dados
+- Sem autenticacao
+- Sem rotas desnecessarias
+
+Compatibilidade com o ambiente Z.AI:
+- Nao usar `localhost`, `127.0.0.1`, URL absoluta, porta manual ou instrucoes de servidor
+- Nao usar `npm run dev`, `npm run build`, docker ou qualquer configuracao manual
+- Nao depender de persistencia duravel
+- Nao chamar APIs externas
+- Nao bloquear a primeira renderizacao
+
+Interatividade:
+- Todo componente interativo deve ser client component
+- Se alguma lib precisar de browser APIs, proteger contra hydration error
+
+Dependencias:
+- Mantenha o numero de dependencias no minimo
+- Evite bibliotecas pesadas ou com postinstall
+- Nao use ExcelJS
+- Nao use OCR na versao 1
+
+2) Product Scope
+
+O app deve fazer apenas isto:
+- Campo para codigos separados por virgula, por exemplo: `7579,5169,7471`
+- Upload de um arquivo PDF
+- Processamento local do PDF
+- Preview resumido do resultado
+- Download do Excel final
+
+O app nao deve fazer:
+- Persistencia entre sessoes
+- Cadastro de usuarios
+- Multiplos PDFs na mesma execucao
+- OCR
+- Integracao com nuvem
+
+3) Design Contract
+
+Direcao visual:
+- Interface unica, clara, profissional e direta
+- Visual forte, mas sem exagero
+- Fundo com leve profundidade, nao flat puro
+- Cartao principal centralizado
+- Layout desktop e mobile funcionando bem
+
+Tipografia:
+- Evite cara de boilerplate
+- Use combinacao simples e robusta
+- Boa hierarquia visual
+
+Elementos obrigatorios na tela:
+- Titulo claro explicando o filtro
+- Campo de texto para codigos
+- Area de upload com drag-and-drop e clique
+- Botao principal `Gerar Excel`
+- Area de status
+- Area de resultado com:
+  - total de linhas encontradas
+  - contagem por codigo
+  - preview das primeiras linhas
+  - botao de download do `.xlsx`
+
+Estados visuais:
+- idle
+- arquivo selecionado
+- processando
+- sucesso
+- erro
+- sem resultados
+
+4) Data Contract
+
+Nao use banco.
+
+Dados em memoria durante a sessao:
+
+`FilterRequest`
+- `codes: string[]`
+- `fileName: string`
+
+`FilterRow`
+- `placa: string`
+- `autuacao: string`
+- `data: string`
+
+`ProcessResult`
+- `rows: FilterRow[]`
+- `countsByCode: Record<string, number>`
+- `total: number`
+- `sourceFileName: string`
+
+Persistencia:
+- Nenhuma obrigatoria
+- Se quiser manter o ultimo valor digitado dos codigos, pode usar `localStorage`, mas isso nao pode ser requisito critico
+
+5) Parsing Contract
+
+Este modulo e o centro do produto. Ele precisa ser implementado com cuidado.
+
+Regras gerais:
+- O sistema deve ler PDFs com camada de texto
+- Nao usar OCR na v1
+- Se o PDF nao tiver texto selecionavel, mostrar erro claro: `Este PDF parece ser imagem/scan sem camada de texto. OCR nao esta habilitado nesta versao.`
+
+Entrada:
+- PDF enviado pelo usuario
+- Lista de codigos separados por virgula
+
+Saida:
+- Lista filtrada contendo apenas `placa`, `autuacao`, `data`
+
+Normalizacao dos codigos digitados:
+- Separar por virgula, espaco ou ponto e virgula
+- Remover tudo que nao for numero
+- Considerar apenas os 4 primeiros digitos de cada codigo valido
+- Remover duplicados
+- Se nenhum codigo valido for informado, bloquear o processamento com mensagem clara
+
+6) PDF Extraction Rules
+
+Implemente leitura da camada de texto do PDF preservando posicoes `x` e `y` dos itens.
+
+Fluxo desejado:
+1. Ler todas as paginas do PDF
+2. Extrair os itens de texto de cada pagina com coordenadas
+3. Agrupar itens por linha usando tolerancia de `y`
+4. Ordenar cada linha por `x`
+5. Detectar a linha de cabecalho dinamicamente em cada pagina
+6. A partir do cabecalho, inferir os limites das colunas da pagina
+7. Ler as linhas de dados seguintes usando os limites detectados
+8. Filtrar apenas as linhas cujo codigo da coluna de infracao/autuacao bata com os codigos pedidos
+
+Importante:
+- Nao assuma ordem fixa de colunas
+- Nao assuma que os nomes das colunas serao sempre iguais
+- Nao assuma que todos os PDFs seguem o mesmo edital
+
+7) Header Detection Rules
+
+O sistema deve localizar dinamicamente as colunas relevantes por nome de cabecalho.
+
+Cabecalhos aceitos para `placa`:
+- `Placa`
+
+Cabecalhos aceitos para `autuacao`:
+- `Infracao`
+- `Infracao/Desdobramento`
+- `Codigo da Infracao`
+- `Codigo Infracao`
+- `Cod Infracao`
+- Variacoes equivalentes com acento ou sem acento
+
+Cabecalhos aceitos para `data`:
+- `Data`
+- `Data Infracao`
+- `Data da Infracao`
+- `Data Infração`
+- Variacoes equivalentes com acento ou sem acento
+
+Regras de deteccao:
+- Normalizar acentos
+- Comparar em lowercase
+- Ignorar espacos repetidos
+- Permitir variacoes simples de escrita
+
+8) Row Mapping Rules
+
+Depois de detectar o cabecalho de uma pagina:
+- Use a ordem real das colunas naquela pagina para calcular os limites horizontais
+- Para cada linha seguinte, encontre o valor que cai dentro da faixa de `placa`, `autuacao` e `data`
+- Extraia somente essas tres informacoes
+
+Validadores de campo:
+
+Placa:
+- Normalizar para maiusculo
+- Remover caracteres que nao sejam alfanumericos
+- Aceitar padrao brasileiro antigo e Mercosul via regex equivalente a `AAA0A00` e `AAA0000`
+
+Data:
+- Aceitar formato `dd/mm/aaaa`
+
+Autuacao:
+- Ler o valor da coluna correspondente
+- Permitir celulas como `7579`, `7579-0`, `7579-1`
+- Para comparacao com os codigos pedidos, considerar apenas os primeiros 4 digitos
+- No Excel exportado, gravar a autuacao normalizada com 4 digitos
+
+Regras de seguranca:
+- Preservar duplicidades legitimas
+- Nao deduplicar linhas
+- Manter a ordem original de aparicao no PDF
+
+9) Real Cases That Must Work
+
+A implementacao deve suportar pelo menos estes dois formatos reais de tabela:
+
+Caso A:
+- `Placa`
+- `Numero Auto`
+- `Data Infracao`
+- `Codigo da Infracao`
+- `Data Limite`
+
+Caso B:
+- `Publicacao`
+- `Edital`
+- `Placa`
+- `AIT`
+- `Infracao`
+- `Data`
+- `Hora`
+
+O algoritmo deve funcionar mesmo quando a coluna de infracao estiver em outra posicao.
+
+10) Feature Modules
+
+10.1 Upload Module
+- Trigger: usuario seleciona ou arrasta um PDF
+- Input: um arquivo `.pdf`
+- Process: validar extensao e tamanho razoavel
+- Output: nome do arquivo exibido e status pronto para processar
+- States: vazio, arquivo carregado, erro de arquivo
+
+10.2 Code Input Module
+- Trigger: usuario digita codigos
+- Input: string como `7579,5169,7471`
+- Process: normalizar e validar
+- Output: array de codigos unicos
+- States: valido, invalido, vazio
+
+10.3 Processing Module
+- Trigger: clique em `Gerar Excel`
+- Input: PDF + codigos
+- Process: extrair texto, detectar cabecalhos, mapear colunas, filtrar linhas
+- Output: `ProcessResult`
+- States: processando, sucesso, erro, sem resultados
+
+10.4 Results Module
+- Trigger: processamento concluido
+- Input: `ProcessResult`
+- Output:
+  - total encontrado
+  - contagem por codigo
+  - preview com pelo menos 20 linhas
+  - download do `.xlsx`
+
+10.5 Excel Export Module
+- Trigger: usuario baixar resultado
+- Input: `ProcessResult.rows`
+- Process: gerar arquivo `.xlsx` real
+- Output: download de arquivo com nome sanitizado no formato `<nome-original>_filtrado.xlsx`
+- Regra: o Excel deve conter apenas 3 colunas:
+  - `placa`
+  - `autuacao`
+  - `data`
+
+11) Technical Guidance
+
+Estruture o projeto de forma simples, por exemplo:
+- `app/page.tsx`
+- `components/upload-panel.tsx`
+- `components/results-panel.tsx`
+- `lib/pdf-parser.ts`
+- `lib/code-utils.ts`
+- `lib/xlsx-export.ts`
+- `lib/types.ts`
+- `lib/mockData.ts` apenas se precisar para estados iniciais
+
+PDF:
+- Pode usar uma estrategia robusta de extracao de texto com coordenadas
+- Se usar biblioteca, escolha a opcao mais estavel e minima possivel
+- O processamento deve acontecer de forma que nao dependa de servidor externo
+
+Excel:
+- Gerar `.xlsx` real
+- Nao substituir por CSV
+
+Performance:
+- Interface deve continuar responsiva
+- Mostre feedback de processamento
+- Evite travar a tela sem feedback
+
+12) Error Handling
+
+Mensagens claras para:
+- nenhum codigo valido informado
+- nenhum PDF enviado
+- arquivo nao e PDF
+- PDF sem camada de texto
+- cabecalho de tabela nao identificado
+- nenhuma linha encontrada para os codigos informados
+- erro inesperado no parsing
+
+As mensagens devem ser objetivas e uteis.
+
+13) Definition of Done
+
+O app so esta pronto quando:
+- roda no preview do Z.AI sem setup manual
+- usa apenas rotas relativas
+- tela inicial abre sem erro de hydration
+- upload do PDF funciona
+- entrada de codigos por virgula funciona
+- parsing identifica cabecalho dinamico por pagina
+- a ordem das colunas pode mudar entre arquivos
+- os dois formatos reais descritos acima funcionam
+- exporta `.xlsx` verdadeiro
+- o Excel contem somente `placa`, `autuacao`, `data`
+- mostra contagem total e por codigo
+- trata estados de loading, erro e vazio
+
+14) Output Required
+
+Entregue:
+- codigo completo executavel no Z.AI Workspace
+- estrutura de arquivos organizada
+- explicacao curta de:
+  - onde esta a logica de parsing do PDF
+  - como a deteccao dinamica de cabecalho funciona
+  - onde esta a exportacao do Excel
+  - quais limitacoes permanecem na v1
+
+15) Final Constraints for the Model
+
+Priorize funcionamento imediato no Z.AI.
+Nao invente backend.
+Nao dependa de banco.
+Nao dependa de APIs externas.
+Nao assuma colunas fixas.
+Nao converta a tarefa para OCR.
+Primeiro entregue uma versao robusta para PDFs com texto selecionavel.

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filtro de Autuações</title>
+  <style>
+    :root {
+      --ink: #16324f;
+      --ink-soft: #315a7d;
+      --paper: #fffaf1;
+      --paper-deep: #f2e4c8;
+      --accent: #d96c3f;
+      --accent-dark: #a94824;
+      --line: rgba(22, 50, 79, 0.18);
+      --shadow: 0 24px 70px rgba(41, 63, 79, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(217, 108, 63, 0.18), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(49, 90, 125, 0.22), transparent 28%),
+        linear-gradient(135deg, #f8efdd 0%, #fffaf1 46%, #f4ebda 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .shell {
+      width: min(1040px, 100%);
+      background: rgba(255, 250, 241, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .hero {
+      padding: 44px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.25), transparent),
+        linear-gradient(160deg, rgba(22, 50, 79, 0.05), rgba(49, 90, 125, 0.08));
+      border-right: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(22, 50, 79, 0.08);
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 22px 0 14px;
+      font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      font-size: clamp(2.3rem, 5vw, 4.3rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .lead {
+      max-width: 34rem;
+      font-size: 1.06rem;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .chip {
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.62);
+      font-size: 0.94rem;
+    }
+
+    .panel {
+      padding: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    form {
+      width: 100%;
+      display: grid;
+      gap: 22px;
+    }
+
+    .field {
+      display: grid;
+      gap: 10px;
+    }
+
+    label {
+      font-size: 0.86rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: rgba(217, 108, 63, 0.7);
+      box-shadow: 0 0 0 4px rgba(217, 108, 63, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .dropzone {
+      position: relative;
+      display: grid;
+      gap: 10px;
+      padding: 26px;
+      border: 1.5px dashed rgba(22, 50, 79, 0.34);
+      border-radius: 20px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.92), rgba(242,228,200,0.72));
+      cursor: pointer;
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .dropzone:hover,
+    .dropzone:focus-within {
+      transform: translateY(-2px);
+      border-color: rgba(217, 108, 63, 0.72);
+      box-shadow: 0 14px 34px rgba(49, 90, 125, 0.14);
+    }
+
+    .dropzone strong {
+      font-size: 1.05rem;
+    }
+
+    .dropzone span {
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 18px 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #fffdf9;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      box-shadow: 0 18px 34px rgba(169, 72, 36, 0.28);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    .status {
+      min-height: 24px;
+      font-size: 0.95rem;
+      color: var(--ink-soft);
+    }
+
+    .status.error {
+      color: #8a2d14;
+    }
+
+    .status.success {
+      color: #1d6a44;
+    }
+
+    .foot {
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+      line-height: 1.6;
+    }
+
+    code {
+      padding: 0.1rem 0.38rem;
+      border-radius: 8px;
+      background: rgba(22, 50, 79, 0.08);
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.92em;
+    }
+
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .hero,
+      .panel {
+        padding: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="grid">
+      <div class="hero">
+        <div class="eyebrow">Filtro de PDF para Excel</div>
+        <h1>Suba o edital,<br>digite os códigos<br>e baixe o resultado.</h1>
+        <p class="lead">
+          O sistema lê a tabela do PDF, filtra apenas as autuações informadas e gera um Excel
+          com três colunas: <code>placa</code>, <code>autuacao</code> e <code>data</code>.
+        </p>
+        <div class="chips">
+          <div class="chip">Códigos por vírgula</div>
+          <div class="chip">Upload de PDF</div>
+          <div class="chip">Download em XLSX</div>
+        </div>
+      </div>
+      <div class="panel">
+        <form id="upload-form">
+          <div class="field">
+            <label for="codes">Códigos de autuação</label>
+            <input id="codes" name="codes" type="text" value="7579,5169,7471" placeholder="7579,5169,7471" required>
+          </div>
+
+          <div class="field">
+            <label for="pdf">Arquivo PDF</label>
+            <div class="dropzone">
+              <strong id="file-label">Escolha o PDF</strong>
+              <span>Selecione um edital no formato PDF. O arquivo é processado localmente pelo servidor Python.</span>
+              <input id="pdf" name="pdf" type="file" accept="application/pdf" required>
+            </div>
+          </div>
+
+          <button id="submit-btn" type="submit">Gerar Excel</button>
+          <div id="status" class="status" aria-live="polite"></div>
+          <div class="foot">
+            Exemplo de entrada: <code>7579,5169,7471</code>. O resultado sai pronto para download.
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("upload-form");
+    const fileInput = document.getElementById("pdf");
+    const fileLabel = document.getElementById("file-label");
+    const statusBox = document.getElementById("status");
+    const submitButton = document.getElementById("submit-btn");
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      fileLabel.textContent = file ? file.name : "Escolha o PDF";
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      statusBox.textContent = "Processando PDF...";
+      statusBox.className = "status";
+      submitButton.disabled = true;
+
+      try {
+        const response = await fetch("/process", {
+          method: "POST",
+          body: new FormData(form)
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({ error: "Falha ao processar o PDF." }));
+          throw new Error(payload.error || "Falha ao processar o PDF.");
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get("Content-Disposition") || "";
+        const match = disposition.match(/filename="([^"]+)"/i);
+        const fileName = match ? match[1] : "autuacoes_filtradas.xlsx";
+        const rowCount = response.headers.get("X-Result-Count") || "0";
+
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+
+        statusBox.textContent = `Arquivo pronto. ${rowCount} linhas exportadas.`;
+        statusBox.className = "status success";
+      } catch (error) {
+        statusBox.textContent = error.message;
+        statusBox.className = "status error";
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

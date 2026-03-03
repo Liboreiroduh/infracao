@@ -1,0 +1,1218 @@
+Padrão Z.AI — “Especificação Absorvível” (como ele entende e vira código)
+1) Como o Z.AI “absorve” informação
+
+Ele performa melhor quando a informação vem em camadas, nessa ordem:
+
+Identidade do produto (1 frase)
+Nome + o que é + para quem + 1 diferencial.
+
+Trilhas de restrição (o que NÃO pode falhar)
+Stack obrigatório, página única vs multi, performance, offline, tipografia, layout fixo.
+
+Contrato de UI/UX (o que fica igual sempre)
+Cores, tipografia, grid, painéis, animações, dark mode.
+
+Contrato de dados (onde salva, formato, chaves, IDs, versionamento)
+IndexedDB/localStorage, schema de notas, árvore, histórico, busca.
+
+Contrato de IA (API, modelos, streaming, erros, timeouts)
+Config, endpoints, SSE, estados de loading, fallback, logs.
+
+Features em “módulos” (com entradas/saídas)
+Cada feature com: Trigger → Input → Process → Output → Persistência.
+
+Critérios de pronto (Definition of Done)
+“Roda local”, “sem telas quebradas”, “CRUD completo”, “cache ok”, “erro tratado”.
+
+Entrega exigida
+“Código completo executável + explicação de X/Y/Z”.
+
+Se você mistura tudo, ele “perde prioridade”. Se você separa em contratos, ele implementa com menos divergência.
+
+TEMPLATE PRONTO (copiar/colar e só preencher)
+# Project Spec: {NOME_DO_APP}
+0) One-liner
+
+Crie um app {single-page|multi-page} chamado {NOME}: {descrição curta}.
+Objetivo principal: {resultado}. Usuário-alvo: {persona}. Diferencial: {1 frase}.
+
+1) Non-negotiables (Regras que não podem ser quebradas)
+
+Stack: {Next.js/React} + {TypeScript} + {Tailwind/shadcn/etc}
+
+Arquitetura: {SPA em 1 página | 3 painéis fixos | rotas}
+
+Persistência: {IndexedDB/localStorage} (offline-first: {sim/não})
+
+Performance: {limites}, {preferência de streaming}, {sem libs pesadas}
+
+Acessibilidade: {atalhos, foco, aria}, prefers-reduced-motion
+
+2) Design Contract (UI/UX fixo)
+Tipografia (obrigatório)
+
+UI Font: {Inter/Noto Sans SC}
+
+Mono: {JetBrains Mono/Fira Code}
+
+Base: 16px, line-height 1.6–1.75, headings 600–700
+
+Cores
+
+Background: {#fafafa ~ #fff} / Dark: {#0f0f0f~#1a1a1a}
+
+Text: {#1a1a1a} / Dark: {#e5e5e5}
+
+Accent: {#2563eb}
+
+Borders: {#e5e5e5}
+
+AI Highlight: {#eff6ff}
+
+Layout (comportamento)
+
+Left: {árvore/lista} (colapsável, drag-and-drop)
+
+Center: {editor + preview}
+
+Right: {painel IA} (colapsável)
+
+Top: {toolbar minimalista} (título, busca, settings, toggle dark)
+
+Microinterações
+
+Troca de nota: fade 200ms
+
+IA: typewriter + cursor
+
+Upload: drag highlight + progress
+
+Painéis: slide 250ms
+
+Tudo respeita prefers-reduced-motion
+
+3) Data Contract (como os dados existem)
+Entidades
+
+Note:
+
+id: string
+
+title: string
+
+contentMarkdown: string
+
+parentId?: string
+
+order: number
+
+createdAt/updatedAt: number
+
+AIConversationItem:
+
+id, noteId, role, content, createdAt
+
+EditHistory:
+
+noteId, snapshots[], cursor/selection(optional)
+
+Persistência
+
+Storage: {IndexedDB preferível}
+
+Strategy: {load on init, debounce save, migrations schema version}
+
+Busca
+
+Full-text: {title+content}, índice simples, highlight match
+
+4) Feature Modules (cada módulo com entrada/saída)
+
+Regra: cada feature descreve Trigger → Input → Process → Output → Persistência → Estados.
+
+4.1 Knowledge Base
+
+Trigger: criar/renomear/mover/deletar
+
+Output: árvore atualizada + nota selecionada
+
+Persistência: salvar tree + note
+
+4.2 Editor Markdown (live)
+
+Input: markdown
+
+Process: render + syntax highlight
+
+Output: preview consistente
+
+Estados: carregando nota, salvando, erro parse
+
+4.3 AI: {NOME_DO_RECURSO} (ex: “Meeting Minutes”)
+
+Trigger: upload áudio
+
+Input: mp3/wav/m4a
+
+Process: chamar API {modelo}, gerar {formato}
+
+Output: {tópico, pontos, ações, decisões}
+
+CTA: “Inserir na nota”
+
+Estados: upload progress, transcribing, summarizing, erro/timeout
+
+4.4 Vision OCR (Imagem/PDF)
+
+Trigger: drag-and-drop
+
+Input: jpg/png/webp/pdf
+
+Process: OCR + estrutura (tabela/gráfico/fórmula)
+
+Output: texto editável + botão “Inserir”
+
+Estados: processing, erro arquivo, fallback
+
+4.5 Intelligent Editing
+
+Trigger: comando natural + seleção
+
+Input: seleção ou doc inteiro + instrução
+
+Process: rewrite/summarize/translate/format
+
+Output: diff/preview + aplicar
+
+Persistência: versionar histórico (undo/redo)
+
+5) AI/LLM Contract (integração)
+Config
+
+baseUrl: {url}
+
+textModel: {modelo}
+
+visionModel: {modelo}
+
+API Key: env/local config
+
+Requisitos técnicos
+
+Streaming: SSE para typewriter
+
+Timeout: {X}s
+
+Error handling: estados + mensagens claras + retry
+
+Logs: {dev only} sem vazar chave
+
+Formatos de resposta (fixar)
+
+Meeting minutes schema (JSON ou Markdown estruturado)
+
+OCR schema (texto + tabelas em markdown)
+
+6) Guidance/Onboarding
+
+Welcome modal: 3 features principais
+
+Config key: tela simples + validação
+
+Empty states:
+
+Sem notas: “{texto}”
+
+IA vazia: “{texto}”
+
+Tooltips: ícones com hint
+
+7) Definition of Done (critério de pronto)
+
+App roda local sem erro
+
+CRUD completo de notas + árvore + drag-drop
+
+Editor markdown + preview
+
+Upload áudio + geração + inserir na nota
+
+Upload imagem/pdf + OCR + editar + inserir
+
+Edição inteligente (seleção + doc) + histórico undo/redo
+
+Dark mode + animações + reduced-motion
+
+Todos fluxos com loading/erro/timeout
+
+8) Output Required
+
+Código completo executável
+
+Explicações obrigatórias:
+
+state management
+
+encapsulamento chamadas API
+
+markdown rendering
+
+persistência local (IndexedDB/localStorage)
+
+streaming SSE
+
+Mini-regra de ouro (pra você nunca errar o prompt)
+
+Tudo que for “obrigatório” vai em Non-negotiables / Contracts.
+
+Tudo que for “feature” vira módulo com entrada/saída e estados.
+
+Tudo que for “pronto” vai em Definition of Done.
+
+Se quiser, eu converto qualquer ideia sua pra esse padrão (1 página) mantendo a mesma “pegada” do Z.AI.
+
+📘 Z.AI Developer Guide & Environme.txt
+Documento
+eu criei esse arquivo a um tempo com sua ajuda para entendermos os limites mas na epoca ele usava o 4.7 talvez tenha atualizado veja o conteudo do arquivo com seu novo prompt e veja se ainda estamos na ideia correta se nao corrija o arquivo para um prompt mais assertivo vamos entender o limite do container dele 
+Diagnóstico: seu arquivo AINDA está correto — mas incompleto para o Z.AI atual
+
+Seu guia foi feito para GLM-4.6 / container Next.js 15 antigo.
+Hoje o Workspace evoluiu, mas a arquitetura base não mudou — só ficaram mais claros alguns limites críticos.
+
+👉 Ou seja: você está na direção certa, porém faltam regras que evitam 90% dos crashes.
+
+Vou te entregar:
+
+✔️ O que continua válido
+
+⚠️ O que está desatualizado ou incompleto
+
+🔥 VERSÃO NOVA DO PROMPT — padrão “anti-erro máximo” para entender o limite real do container
+
+✔️ O que continua 100% correto
+
+Do seu arquivo 
+
+📘 Z.AI Developer Guide & Envir…
+
+:
+
+Next.js 15 + App Router + TS ✔️
+
+Tailwind + shadcn/ui ✔️
+
+Porta 3000 interna → Gateway 81 ✔️
+
+Apenas rotas relativas ✔️
+
+Server inicia sozinho ✔️
+
+Mock data primeiro ✔️
+
+SQLite local ✔️
+
+Container hiberna ✔️
+
+Deploy temporário ✔️
+
+Upload ~250MB ✔️
+
+👉 Isso define a base do Workspace.
+
+⚠️ O que está incompleto hoje (crítico)
+1) Persistência é ainda mais frágil do que você descreveu
+
+Não é só “hiberna” — o filesystem pode ser recriado.
+
+➡️ Regra real:
+
+Nada salvo localmente é confiável para produção.
+
+SQLite funciona apenas durante a sessão.
+
+2) Não é só banco externo que quebra — chamadas externas também podem
+
+Timeout agressivo do preview.
+
+3) Problema real nº1 hoje: SSR + Hydration
+
+Next 15 + App Router + RSC = principal causa de tela branca.
+
+4) Problema real nº2: dependências pesadas
+
+O build automático pode falhar silenciosamente.
+
+5) Problema real nº3: múltiplas rotas complexas
+
+O container funciona melhor como SPA “disfarçada”.
+
+🔥 PROMPT CORRIGIDO — PADRÃO DEFINITIVO PARA Z.AI (2026)
+
+Substitua a seção 5 do seu documento por isto:
+
+🧠 SYSTEM PROMPT — Z.AI Workspace (Atualizado)
+
+ATENÇÃO: Você está gerando código para o ambiente Z.AI Workspace Container.
+Este NÃO é um ambiente Node tradicional. Siga TODAS as restrições.
+
+1) STACK OBRIGATÓRIO
+
+Next.js 15 (App Router)
+
+TypeScript
+
+Tailwind CSS 4
+
+shadcn/ui
+
+Lucide React
+
+Não use alternativas.
+
+2) NAVEGAÇÃO E REDE
+
+Use APENAS rotas relativas (href="/app")
+
+NUNCA use:
+
+localhost
+
+127.0.0.1
+
+URLs absolutas
+
+protocolo http/https manual
+
+Não configure domínio ou porta
+
+3) DADOS (REGRA DE OURO)
+
+Primeira versão DEVE usar apenas:
+
+👉 Dados mockados em memória
+
+Crie:
+
+src/lib/mockData.ts
+
+Não use:
+
+Prisma migrations
+
+Banco externo
+
+Supabase
+
+Firebase
+
+APIs pesadas
+
+Persistência local é apenas temporária.
+
+4) PERSISTÊNCIA SEGURA
+
+Se necessário, use APENAS:
+
+Local state
+
+Zustand
+
+localStorage (não confiável entre sessões)
+
+Nunca dependa de persistência para funcionamento crítico.
+
+5) INTERATIVIDADE (CRÍTICO)
+
+Next 15 usa Server Components por padrão.
+
+Todo componente interativo DEVE:
+
+"use client"
+
+Inclui:
+
+Forms
+
+Drag-and-drop
+
+Charts
+
+Modals
+
+Inputs controlados
+
+Zustand hooks
+
+window/document
+
+event handlers
+
+6) SSR / HYDRATION SAFETY
+
+Para evitar tela branca:
+
+Evite acesso a window durante render
+
+Bibliotecas client-only devem usar:
+
+const [mounted, setMounted] = useState(false)
+useEffect(() => setMounted(true), [])
+if (!mounted) return null
+7) DEPENDÊNCIAS
+
+Evite libs pesadas ou não compatíveis com SSR.
+
+Prefira:
+
+shadcn/ui components
+
+Tailwind utilities
+
+Bibliotecas pequenas
+
+8) ESTRATÉGIA DE DESENVOLVIMENTO (OBRIGATÓRIA)
+PASSO 1 — UI funcional com mock data
+
+Sem backend real.
+
+PASSO 2 — Estilo e layout
+
+Use cores explícitas (Tailwind classes diretas).
+
+PASSO 3 — Interatividade
+
+Converter componentes necessários para client.
+
+9) ARQUITETURA IDEAL
+
+O container funciona melhor como:
+
+👉 Single-page app dentro do App Router
+
+Evite sistemas complexos de rotas.
+
+10) COMANDOS PROIBIDOS
+
+Nunca tente:
+
+npm run dev
+
+npm run build
+
+docker
+
+scripts custom
+
+configuração manual do servidor
+
+O ambiente gerencia isso automaticamente.
+
+11) EXTERNAL CALLS
+
+Evite chamadas externas na primeira renderização.
+
+Se necessário:
+
+use fetch client-side
+
+trate timeout e erro
+
+não bloqueie o carregamento inicial
+
+12) OUTPUT ESPERADO
+
+Gerar:
+
+Código completo executável
+
+Estrutura de arquivos simples
+
+Sem necessidade de configuração manual
+
+Foco em funcionamento imediato no preview
+
+🎯 Diagnóstico final (o limite REAL do container)
+O que ele aguenta bem
+
+✔️ Dashboards
+✔️ CRUD local
+✔️ Ferramentas SaaS frontend
+✔️ Apps offline-first
+✔️ Prototipagem avançada
+✔️ Sistemas tipo Notion/Trello local
+
+Onde ele começa a quebrar
+
+❌ Backend real complexo
+❌ Múltiplos serviços
+❌ Banco externo pesado
+❌ SSR mal configurado
+❌ Dependências grandes
+❌ Apps multi-tenant reais
+
+💎 Insight importante
+
+O Z.AI Workspace é essencialmente:
+
+👉 Um prototipador full-stack efêmero
+
+(com preview instantâneo)
+
+Perfeito para criar um produto exportável — não para hospedar o produto final.
+
+Se quiser, posso te entregar também:
+
+👉 “Prompt mestre Atherax para construir apps completos no Z.AI sem falhas”
+👉 ou um template para gerar sistemas SaaS exportáveis prontos para produção
+
+Só pedir.
+
+Fontes
+vamos criar um arquivo de limites para quando eu quiser gerar um prompt com vc teremos ele de forma mais completa. é meio que um arquivo de conhecimento, sempre que eu pedir um prompt vou jogar esse arquivo como contexto 
+📘 Z.AI Workspace — Arquivo de Limites e Contexto Operacional (Padrão Mestre)
+
+Versão: 2.0 — Container Atual (Next.js 15 / GLM-4.x / Workspace Cloud)
+Objetivo: Servir como CONTEXTO BASE para geração de prompts e código compatível com o Z.AI.
+Uso: Envie este arquivo junto de qualquer solicitação de prompt ou código.
+
+🧠 1. Natureza do Ambiente
+
+O Z.AI Workspace é um container cloud efêmero de desenvolvimento full-stack com preview em tempo real, não um servidor tradicional.
+
+Características fundamentais
+
+Não permite execução manual de comandos
+
+Não é persistente
+
+Funciona melhor como prototipador SaaS exportável
+
+Código é gerado via IA e executado automaticamente
+
+Preview roda atrás de um gateway reverso
+
+👉 Pense nele como:
+“Um ambiente de build + execução automática para apps web exportáveis.”
+
+⚙️ 2. Stack Nativo do Workspace
+Framework base
+
+Next.js 15 (App Router)
+
+React 18+
+
+TypeScript 5
+
+Tailwind CSS 4
+
+shadcn/ui (estilo New York)
+
+Lucide Icons
+
+Backend interno
+
+Node.js runtime gerenciado
+
+SQLite + Prisma (local)
+
+File system temporário
+
+🌐 3. Rede, Portas e Navegação
+Arquitetura de exposição
+
+Porta interna: 3000
+
+Porta externa: 81 (via gateway Caddy)
+
+Regras obrigatórias
+
+❌ NUNCA usar:
+
+localhost
+
+127.0.0.1
+
+URLs absolutas
+
+Protocolo manual (http/https)
+
+Porta explícita
+
+✔️ SEMPRE usar:
+
+Caminhos relativos (/dashboard, /app, /login)
+
+<Link href="/rota">
+
+💾 4. Persistência de Dados (CRÍTICO)
+
+O container pode hibernar ou ser recriado a qualquer momento.
+
+O que NÃO é confiável
+
+SQLite local permanente
+
+Arquivos gravados no sistema
+
+Zustand em memória
+
+Sessões longas
+
+Cache persistente
+
+O que é aceitável
+
+Mock data
+
+Estado em memória
+
+localStorage (apenas sessão ativa)
+
+👉 Regra prática:
+
+⚠️ Nada local deve ser considerado permanente
+🔌 5. Integrações Externas
+
+Chamadas externas podem falhar por timeout ou bloqueio.
+
+Evitar na primeira renderização:
+
+APIs pesadas
+
+Bancos externos
+
+WebSockets complexos
+
+Streaming externo bloqueante
+
+Se necessário:
+
+Fazer client-side
+
+Tratar erro e timeout
+
+Não bloquear UI inicial
+
+🧩 6. SSR, RSC e Hydration (Principal fonte de erro)
+
+Next.js 15 usa Server Components por padrão.
+
+Componentes interativos DEVEM:
+"use client"
+
+Inclui:
+
+Inputs
+
+Formulários
+
+Drag-and-drop
+
+Charts
+
+Modais
+
+Hooks de estado
+
+Event handlers
+
+window/document
+
+Segurança contra hydration error
+
+Bibliotecas client-only:
+
+const [mounted, setMounted] = useState(false)
+
+useEffect(() => {
+  setMounted(true)
+}, [])
+
+if (!mounted) return null
+📦 7. Dependências e Build
+
+O build é automático e invisível.
+
+Podem causar falha silenciosa:
+
+Bibliotecas muito pesadas
+
+Dependências não compatíveis com SSR
+
+Código Node-only no frontend
+
+Pacotes com postinstall scripts
+
+Preferir:
+
+shadcn/ui
+
+Tailwind utilities
+
+Bibliotecas leves
+
+🧪 8. Estratégia Recomendada de Desenvolvimento
+PASSO 1 — UI com dados mockados
+
+Criar:
+
+src/lib/mockData.ts
+
+Construir todo o app consumindo esses dados.
+
+PASSO 2 — Estilo e layout
+
+O padrão é monocromático.
+
+Usar cores explícitas:
+
+bg-[#111827]
+text-blue-600
+bg-emerald-50
+PASSO 3 — Interatividade
+
+Adicionar "use client" apenas onde necessário.
+
+🏗️ 9. Arquitetura Ideal de App
+
+Funciona melhor como:
+
+👉 SPA dentro do App Router
+
+Evitar:
+
+Sistemas multi-serviço
+
+Microservices
+
+Rotas excessivamente complexas
+
+Configurações avançadas de backend
+
+🚫 10. Comandos Proibidos
+
+Nunca gerar código que tente:
+
+npm run dev
+
+npm run build
+
+docker commands
+
+scripts de servidor
+
+configuração manual de runtime
+
+O ambiente gerencia tudo automaticamente.
+
+📁 11. Upload e Arquivos
+
+Limites aproximados:
+
+~10 arquivos por upload
+
+~25 MB cada
+
+~250 MB total no contexto
+
+Deploy público é temporário.
+
+Para produção:
+
+👉 Código deve ser baixado e hospedado externamente.
+
+⏳ 12. Persistência da Sessão
+
+O container pode:
+
+Hibernar
+
+Reiniciar
+
+Perder estado
+
+Resetar banco local
+
+Sem aviso.
+
+🤖 13. Uso como Backend de IA
+
+Pode ser usado via API externa:
+
+GLM-4.x
+
+GLM-Flash
+
+Compatível com formato OpenAI-like.
+
+🎯 14. Casos de Uso Ideais
+
+✔️ Protótipos SaaS
+✔️ Ferramentas internas
+✔️ Dashboards
+✔️ CRUD local
+✔️ Apps offline-first
+✔️ MVP exportável
+✔️ Clones de interfaces
+
+❌ Casos de Uso NÃO Ideais
+
+❌ Sistema de produção permanente
+❌ Backend robusto com banco real
+❌ Streaming pesado contínuo
+❌ Apps multi-tenant reais
+❌ Infra distribuída
+
+🏁 15. Definição de Sucesso no Workspace
+
+Um app é considerado adequado quando:
+
+Roda imediatamente no preview
+
+Não depende de setup manual
+
+Funciona com dados mockados
+
+Não quebra após reload simples
+
+Pode ser exportado e hospedado externamente
+
+🧩 16. Regra Suprema para Geração de Código
+👉 PRIMEIRO FAÇA FUNCIONAR NO CONTAINER
+👉 DEPOIS PENSE EM PRODUÇÃO
+📌 17. Instrução para IA ao Usar Este Arquivo
+
+Sempre que este documento for fornecido como contexto:
+
+👉 Gere soluções compatíveis com o Z.AI Workspace
+👉 Evite qualquer requisito fora dessas limitações
+👉 Priorize funcionamento imediato no preview
+
+🧠 RESUMO EXECUTIVO
+
+O Z.AI Workspace é:
+
+👉 Um prototipador full-stack efêmero com preview instantâneo
+👉 Ideal para gerar aplicações exportáveis, não para hospedagem final
+
+Se quiser, posso criar também:
+
+📦 Versão “Prompt Booster” para Codex / GPT / Claude
+
+🧠 Template Atherax para gerar SaaS completos no Z.AI
+
+⚡ Arquivo de “Boas práticas de performance” específico
+
+🏗️ Template de arquitetura para apps grandes sem crash
+
+Só pedir.
+
+nao so quero um arquivo final tipo uma chave mestra que ensina futuros prompts. pense o seguinte quando eu quiser montar algo la eu vou te falar monte um prompt pro z.ai que obedeça esse arquivo e esse arquivo vai ensinar sobre os limites da ferramenta sobre como usar ele de forma mais conclusiva possivel sem erro. quero poder potencializar a ferramenta pra testes usando o ambiente do z.ai 
+🔑 Z.AI WORKSPACE — CHAVE MESTRA DE CONTEXTO (PROMPT ROOT)
+
+Versão: MASTER KEY v1.0 — Uso Universal
+Objetivo: Servir como contexto obrigatório para geração de prompts e código destinados ao Z.AI Workspace, maximizando sucesso na primeira execução e evitando erros estruturais.
+
+🧠 IDENTIDADE DO AMBIENTE
+
+O Z.AI Workspace é um container cloud efêmero de prototipagem full-stack com execução automática e preview instantâneo, baseado em Next.js.
+
+Ele NÃO é um servidor tradicional, VPS, PaaS completo ou ambiente de produção.
+
+👉 Pense nele como:
+
+➜ “Um gerador e executor automático de aplicações web exportáveis”
+⚙️ STACK NATIVO (NÃO ALTERAR)
+
+Sempre assumir:
+
+Next.js 15 (App Router)
+
+React 18+
+
+TypeScript
+
+Tailwind CSS 4
+
+shadcn/ui (New York style)
+
+Lucide Icons
+
+Node runtime gerenciado
+
+SQLite local (temporário)
+
+Preview atrás de gateway reverso
+
+Não sugerir stacks alternativas.
+
+🌐 REDE, PORTAS E NAVEGAÇÃO
+
+Arquitetura interna:
+
+Porta interna: 3000
+
+Porta externa: 81 (gateway)
+
+Regras absolutas
+
+❌ Nunca usar:
+
+localhost
+
+127.0.0.1
+
+URLs absolutas
+
+Protocolo manual
+
+Porta explícita
+
+Links externos para si mesmo
+
+✔️ Sempre usar:
+
+Rotas relativas (/app, /dashboard)
+
+<Link href="/rota">
+
+💾 PERSISTÊNCIA (LIMITAÇÃO CRÍTICA)
+
+O container pode reiniciar ou hibernar a qualquer momento.
+
+Não confiável:
+
+SQLite permanente
+
+Arquivos locais
+
+Memória do servidor
+
+Sessões persistentes
+
+Cache durável
+
+Confiável apenas durante a sessão:
+
+Estado em memória
+
+localStorage
+
+Dados mockados
+
+➜ Nenhuma funcionalidade deve depender de persistência permanente
+🔌 INTEGRAÇÕES EXTERNAS
+
+Chamadas externas podem falhar por timeout ou bloqueio.
+
+Evitar na carga inicial:
+
+APIs pesadas
+
+Bancos remotos
+
+Streaming bloqueante
+
+WebSockets complexos
+
+Se necessário:
+
+Fazer client-side
+
+Tratar erros
+
+Não bloquear UI inicial
+
+🧩 SSR, RSC E INTERATIVIDADE
+
+Next.js 15 usa Server Components por padrão.
+
+Todo elemento interativo DEVE ser Client Component.
+
+"use client"
+
+Inclui:
+
+Formulários
+
+Inputs controlados
+
+Drag-and-drop
+
+Charts
+
+Modais
+
+Hooks de estado
+
+Eventos
+
+Acesso a window/document
+
+Proteção contra hydration error
+
+Bibliotecas client-only devem aguardar montagem:
+
+const [mounted, setMounted] = useState(false)
+
+useEffect(() => setMounted(true), [])
+
+if (!mounted) return null
+📦 DEPENDÊNCIAS
+
+O build é automático e invisível.
+
+Evitar:
+
+Bibliotecas pesadas
+
+Pacotes não compatíveis com SSR
+
+Scripts pós-instalação
+
+Código Node-only no frontend
+
+Preferir:
+
+shadcn/ui
+
+Tailwind utilities
+
+Bibliotecas leves
+
+🧪 ESTRATÉGIA DE DESENVOLVIMENTO OBRIGATÓRIA
+PASSO 1 — Interface com dados mockados
+
+Criar arquivo:
+
+src/lib/mockData.ts
+
+Construir toda a aplicação consumindo esses dados.
+
+Não configurar banco real na primeira versão.
+
+PASSO 2 — Layout e estilo
+
+O tema padrão é monocromático.
+
+Usar cores explícitas via Tailwind:
+
+bg-[#111827]
+text-blue-600
+bg-emerald-50
+PASSO 3 — Interatividade progressiva
+
+Adicionar "use client" apenas onde necessário.
+
+🏗️ ARQUITETURA IDEAL
+
+O ambiente funciona melhor como:
+
+➜ Single-Page Application dentro do App Router
+
+Evitar:
+
+Microservices
+
+Backend complexo
+
+Configurações avançadas
+
+Rotas excessivas
+
+🚫 COMANDOS PROIBIDOS
+
+Nunca gerar instruções ou código que tente executar:
+
+npm run dev
+
+npm run build
+
+docker
+
+scripts de servidor
+
+configuração manual do runtime
+
+O ambiente gerencia automaticamente.
+
+📁 UPLOAD E DEPLOY
+
+Limites aproximados:
+
+~10 arquivos por upload
+
+~25 MB cada
+
+~250 MB total
+
+Deploy público é temporário.
+
+Produção requer exportação do código.
+
+⏳ SESSÃO E VOLATILIDADE
+
+O container pode:
+
+Reiniciar
+
+Hibernar
+
+Perder estado
+
+Resetar banco local
+
+Sem aviso.
+
+🎯 CASOS DE USO IDEAIS
+
+✔️ Protótipos SaaS
+✔️ Ferramentas internas
+✔️ Dashboards
+✔️ CRUD local
+✔️ MVP exportável
+✔️ Clones de interface
+✔️ Testes de conceito
+
+❌ CASOS NÃO IDEAIS
+
+❌ Sistema de produção permanente
+❌ Backend robusto com banco real
+❌ Infra distribuída
+❌ Apps multi-tenant reais
+❌ Streaming contínuo pesado
+
+🏁 DEFINIÇÃO DE SUCESSO
+
+Um projeto está correto quando:
+
+Funciona imediatamente no preview
+
+Não exige setup manual
+
+Usa dados mockados inicialmente
+
+Não depende de persistência durável
+
+Pode ser exportado para produção externa
+
+🧠 PRINCÍPIO OPERACIONAL CENTRAL
+➜ PRIMEIRO FAZER FUNCIONAR NO CONTAINER
+➜ DEPOIS ADAPTAR PARA PRODUÇÃO
+📌 INSTRUÇÃO FINAL PARA QUALQUER IA
+
+Quando este arquivo for fornecido como contexto:
+
+Assuma que o código será executado no Z.AI Workspace.
+
+Respeite TODAS as limitações acima.
+
+Priorize funcionamento imediato sem configuração manual.
+
+Evite soluções incompatíveis com ambiente efêmero.
+
+Gere prompts e código otimizados para zero-erro na primeira execução.
+
+🔑 RESUMO DEFINITIVO
+➜ O Z.AI Workspace é um prototipador full-stack efêmero com preview instantâneo
+➜ Ideal para criar aplicações exportáveis, não para hospedar aplicações finais

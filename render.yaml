@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: filtro-autuacoes-pdf
+    runtime: python
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
